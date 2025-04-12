@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoulMate.AGI - Your Personalized AI Companion</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Fallback for Chart.js -->
+    <script>
+        window.addEventListener('DOMContentLoaded', function() {
+            // Check if Chart.js loaded properly
+            if (typeof Chart === 'undefined') {
+                console.error("Chart.js failed to load. Loading fallback...");
+                
+                // Create a fallback script element
+                const fallbackScript = document.createElement('script');
+                fallbackScript.src = "https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js";
+                fallbackScript.onload = function() {
+                    console.log("Fallback Chart.js loaded successfully");
+                    // Refresh insights if on that page
+                    const insightsSection = document.getElementById('insights-section');
+                    if (insightsSection && !insightsSection.classList.contains('hidden')) {
+                        const refreshButton = document.getElementById('refresh-insights');
+                        if (refreshButton) {
+                            refreshButton.click();
+                        }
+                    }
+                };
+                fallbackScript.onerror = function() {
+                    console.error("Failed to load fallback Chart.js. Disabling chart features.");
+                    // Add global flag to indicate charts are unavailable
+                    window.chartsUnavailable = true;
+                };
+                
+                document.head.appendChild(fallbackScript);
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Main App Interface -->
+        <div id="app-interface" class="app-interface">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="logo-container">
+                    <h2 class="logo">SoulMate.AGI</h2>
+                </div>
+                <nav class="nav-menu">
+                    <ul>
+                        <li class="nav-item active" data-section="chat">
+                            <i class="nav-icon chat-icon"></i>
+                            <span>Chat</span>
+                        </li>
+                        <li class="nav-item" data-section="journal">
+                            <i class="nav-icon journal-icon"></i>
+                            <span>Journal</span>
+                        </li>
+                        <li class="nav-item" data-section="insights">
+                            <i class="nav-icon insights-icon"></i>
+                            <span>Insights</span>
+                        </li>
+                        <li class="nav-item" data-section="wellness">
+                            <i class="nav-icon wellness-icon"></i>
+                            <span>Wellness</span>
+                        </li>
+                        <li class="nav-item" data-section="memory-vault">
+                            <i class="nav-icon vault-icon"></i>
+                            <span>Memory Vault</span>
+                        </li>
+                        <li class="nav-item" data-section="preferences">
+                            <i class="nav-icon settings-icon"></i>
+                            <span>Preferences</span>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="user-info">
+                    <div class="user-avatar"></div>
+                    <span id="user-name">User</span>
+                    <div class="user-menu">
+                        <button id="night-mode-toggle" class="mode-toggle">Night Mode</button>
+                        <button id="logout-button" class="logout-button">Logout</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Chat Section -->
+                <div id="chat-section" class="content-section active">
+                    <div class="section-header">
+                        <h2>Chat with Your SoulMate</h2>
+                    </div>
+                    <div class="chat-container">
+                        <div id="chat-messages" class="chat-messages">
+                            <div class="message ai-message welcome-message">
+                                <div class="message-content">
+                                    <p>Hello! I'm your SoulMate.AGI companion. I'm here to chat, listen, and grow with you. What's on your mind today?</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chat-input-container">
+                            <textarea id="chat-input" placeholder="Type your message here..." class="chat-input"></textarea>
+                            <button id="send-button" class="send-button">Send</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Journal Section -->
+                <div id="journal-section" class="content-section hidden">
+                    <div class="section-header">
+                        <h2>Journal Your Thoughts</h2>
+                    </div>
+                    <div class="journal-container">
+                        <div class="journal-instruction">
+                            <p>Express your thoughts freely. This is a safe space just for you.</p>
+                        </div>
+                        <div id="journal-entries" class="journal-entries">
+                            <div class="journal-response ai-message">
+                                <div class="message-content">
+                                    <p>I'm here to reflect on your thoughts and feelings. Write as much or as little as you'd like.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="journal-input-container">
+                            <textarea id="journal-input" placeholder="What's on your mind today?" class="journal-input"></textarea>
+                            <button id="journal-submit" class="journal-submit">Share</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Insights Section -->
+                <div id="insights-section" class="content-section hidden">
+                    <div class="section-header">
+                        <h2>Your Emotional Insights</h2>
+                        <div class="section-controls">
+                            <div class="time-filter">
+                                <select id="insights-time-filter" class="time-filter-select">
+                                    <option value="day">Today</option>
+                                    <option value="week" selected>This Week</option>
+                                    <option value="month">This Month</option>
+                                </select>
+                            </div>
+                            <button id="refresh-insights" class="refresh-button">
+                                <span class="refresh-icon">↻</span>
+                                <span class="refresh-text">Refresh</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Simple hardcoded insights for testing -->
+                    <div class="insights-container" style="padding: 20px;">
+                        <div class="summary-card insight-panel" style="background-color: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; overflow: hidden;">
+                            <div class="insight-panel-header" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f0f0f0;">
+                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 500;">Daily Thought Summary</h3>
+                                <div class="insight-actions">
+                                    <button class="action-button download-button" title="Save as PDF" style="background: none; border: none; cursor: pointer;">
+                                        <span class="action-icon">↓</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="daily-summary" class="summary-content" style="padding: 20px;">
+                                <p>You've been feeling generally positive this week, with occasional moments of reflection.</p>
+                            </div>
+                            <div class="featured-topics" id="featured-topics" style="padding: 0 20px 20px;">
+                                <h4 style="font-size: 0.9rem; color: #555; margin: 0 0 10px 0;">Topics You've Discussed</h4>
+                                <div class="topic-tags" id="discussion-topics" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                    <div class="topic-tag" style="background-color: #f0f7ff; color: #4a7bff; padding: 5px 10px; border-radius: 15px; font-size: 0.85rem;">Personal growth</div>
+                                    <div class="topic-tag" style="background-color: #f0f7ff; color: #4a7bff; padding: 5px 10px; border-radius: 15px; font-size: 0.85rem;">Relationships</div>
+                                    <div class="topic-tag" style="background-color: #f0f7ff; color: #4a7bff; padding: 5px 10px; border-radius: 15px; font-size: 0.85rem;">Work-life balance</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="emotion-card insight-panel" style="background-color: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; overflow: hidden;">
+                            <div class="insight-panel-header" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f0f0f0;">
+                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 500;">Emotional Patterns</h3>
+                            </div>
+                            <div id="emotion-trend" class="emotion-content" style="padding: 20px;">
+                                <div class="emotion-chart" style="display: flex; flex-direction: column; gap: 10px;">
+                                    <div class="emotion-bar-container" style="display: flex; align-items: center;">
+                                        <span class="emotion-label" style="width: 100px; font-size: 0.9rem; text-transform: capitalize;">Joy</span>
+                                        <div class="emotion-bar" style="flex: 1; height: 20px; background-color: #f0f0f0; border-radius: 10px; overflow: hidden;">
+                                            <div class="emotion-bar-fill" style="height: 100%; width: 40%; background-color: #2ecc71; border-radius: 10px; position: relative;" data-percentage="40%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="emotion-bar-container" style="display: flex; align-items: center;">
+                                        <span class="emotion-label" style="width: 100px; font-size: 0.9rem; text-transform: capitalize;">Sadness</span>
+                                        <div class="emotion-bar" style="flex: 1; height: 20px; background-color: #f0f0f0; border-radius: 10px; overflow: hidden;">
+                                            <div class="emotion-bar-fill" style="height: 100%; width: 20%; background-color: #3498db; border-radius: 10px; position: relative;" data-percentage="20%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="emotion-bar-container" style="display: flex; align-items: center;">
+                                        <span class="emotion-label" style="width: 100px; font-size: 0.9rem; text-transform: capitalize;">Neutral</span>
+                                        <div class="emotion-bar" style="flex: 1; height: 20px; background-color: #f0f0f0; border-radius: 10px; overflow: hidden;">
+                                            <div class="emotion-bar-fill" style="height: 100%; width: 25%; background-color: #95a5a6; border-radius: 10px; position: relative;" data-percentage="25%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="emotion-bar-container" style="display: flex; align-items: center;">
+                                        <span class="emotion-label" style="width: 100px; font-size: 0.9rem; text-transform: capitalize;">Surprise</span>
+                                        <div class="emotion-bar" style="flex: 1; height: 20px; background-color: #f0f0f0; border-radius: 10px; overflow: hidden;">
+                                            <div class="emotion-bar-fill" style="height: 100%; width: 15%; background-color: #f39c12; border-radius: 10px; position: relative;" data-percentage="15%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="insight-card insight-panel" style="background-color: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; overflow: hidden;">
+                            <div class="insight-panel-header" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f0f0f0;">
+                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 500;">Personalized Insight</h3>
+                            </div>
+                            <div id="emotional-insight" class="insight-content" style="padding: 20px;">
+                                <p>You tend to experience more positive emotions in the morning and evening, with some dips in mood during the afternoon.</p>
+                            </div>
+                            <div class="insight-recommendations" id="insight-recommendations" style="padding: 0 20px 20px;">
+                                <h4 style="font-size: 0.9rem; color: #555; margin: 0 0 10px 0;">Recommended Actions</h4>
+                                <div class="recommendation-list" id="action-recommendations" style="display: flex; flex-direction: column; gap: 10px;">
+                                    <div class="recommendation-item" style="background-color: #f8f8f8; padding: 12px 15px; border-radius: 8px; font-size: 0.9rem; border-left: 3px solid #4a7bff;">Consider taking short breaks during afternoon work sessions</div>
+                                    <div class="recommendation-item" style="background-color: #f8f8f8; padding: 12px 15px; border-radius: 8px; font-size: 0.9rem; border-left: 3px solid #4a7bff;">Morning journaling seems beneficial for your mood</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="loneliness-card insight-panel" style="background-color: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; overflow: hidden;">
+                            <div class="insight-panel-header" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f0f0f0;">
+                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 500;">Connection Analysis</h3>
+                            </div>
+                            <div id="loneliness-insight" class="loneliness-content" style="padding: 20px;">
+                                <p>I'm happy to see you've been expressing more feelings of connection recently. Continue nurturing your connections to maintain your sense of belonging.</p>
+                            </div>
+                            <div class="connection-stats" style="display: flex; justify-content: space-around; padding: 0 20px 20px;">
+                                <div class="connection-stat-item" style="text-align: center;">
+                                    <div style="font-size: 1.5rem; font-weight: bold; color: #2ecc71;">70%</div>
+                                    <div style="font-size: 0.9rem; color: #666;">Connection Level</div>
+                                </div>
+                                <div class="connection-stat-item" style="text-align: center;">
+                                    <div style="font-size: 1.5rem; font-weight: bold; color: #3498db;">↑</div>
+                                    <div style="font-size: 0.9rem; color: #666;">Improving</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wellness Section -->
+                <div id="wellness-section" class="content-section hidden">
+                    <div class="section-header">
+                        <h2>Wellness Center</h2>
+                    </div>
+                    <div class="wellness-container">
+                        <div class="wellness-intro">
+                            <p>Welcome to your wellness space. Here you'll find tools to help you find balance and calm.</p>
+                        </div>
+                        
+                        <div class="wellness-activities">
+                            <div class="wellness-card" id="breathing-exercise">
+                                <h3>Breathing Exercise</h3>
+                                <p>A simple breathing technique to help you relax and center yourself.</p>
+                                <button class="wellness-button">Start Exercise</button>
+                            </div>
+                            
+                            <div class="wellness-card" id="positive-affirmations">
+                                <h3>Positive Affirmations</h3>
+                                <p>Affirmations to boost your mood and mindset.</p>
+                                <button class="wellness-button">View Affirmations</button>
+                            </div>
+                            
+                            <div class="wellness-card" id="meditation-guide">
+                                <h3>Quick Meditation</h3>
+                                <p>A short guided meditation to help you clear your mind.</p>
+                                <button class="wellness-button">Begin Meditation</button>
+                            </div>
+                            
+                            <div class="wellness-card" id="relaxation-story">
+                                <h3>Relaxation Story</h3>
+                                <p>A calming story to help you unwind and relax.</p>
+                                <button class="wellness-button">Read Story</button>
+                            </div>
+                        </div>
+                        
+                        <div class="wellness-content-area" id="wellness-content">
+                            <div class="wellness-content-container">
+                                <h3 id="wellness-content-title">Select an activity</h3>
+                                <div id="wellness-content-body">
+                                    <p>Choose one of the wellness activities to get started.</p>
+                                </div>
+                                <button id="close-wellness-content" class="close-button">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Memory Vault Section -->
+                <div id="memory-vault-section" class="content-section hidden">
+                    <div class="section-header">
+                        <h2>Memory Vault</h2>
+                    </div>
+                    <div class="memory-vault-container">
+                        <div class="memory-vault-intro">
+                            <p>Your private memory vault stores your most important thoughts and reflections securely.</p>
+                        </div>
+                        
+                        <div class="memory-vault-input-container">
+                            <textarea id="memory-vault-input" placeholder="Write something you'd like to remember or reflect on later..." class="memory-vault-input"></textarea>
+                            <div class="memory-type-selector">
+                                <label for="memory-type">Memory type:</label>
+                                <select id="memory-type" class="memory-type-select">
+                                    <option value="reflection">Reflection</option>
+                                    <option value="gratitude">Gratitude</option>
+                                    <option value="goal">Goal</option>
+                                    <option value="memory">Memory</option>
+                                </select>
+                            </div>
+                            <button id="save-memory" class="save-memory-button">Save to Vault</button>
+                        </div>
+                        
+                        <div class="memory-vault-entries" id="memory-vault-entries">
+                            <div class="memory-vault-placeholder">
+                                <p>Your saved memories will appear here.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preferences Section -->
+                <div id="preferences-section" class="content-section hidden">
+                    <div class="section-header">
+                        <h2>Your Preferences</h2>
+                    </div>
+                    <div class="preferences-container">
+                        <div class="preference-group">
+                            <h3>Interaction Style</h3>
+                            <div class="preference-item">
+                                <label for="communication-style">Communication Style:</label>
+                                <select id="communication-style" class="preference-select">
+                                    <option value="friendly">Friendly & Casual</option>
+                                    <option value="supportive">Supportive & Encouraging</option>
+                                    <option value="analytical">Analytical & Thoughtful</option>
+                                    <option value="direct">Direct & Straightforward</option>
+                                </select>
+                            </div>
+                            <div class="preference-item">
+                                <label for="response-length">Response Length:</label>
+                                <select id="response-length" class="preference-select">
+                                    <option value="concise">Concise</option>
+                                    <option value="balanced" selected>Balanced</option>
+                                    <option value="detailed">Detailed</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="preference-group">
+                            <h3>Support Preferences</h3>
+                            <div class="preference-item checkbox-item">
+                                <input type="checkbox" id="offer-advice" class="preference-checkbox" checked>
+                                <label for="offer-advice">Offer advice when appropriate</label>
+                            </div>
+                            <div class="preference-item checkbox-item">
+                                <input type="checkbox" id="emotional-support" class="preference-checkbox" checked>
+                                <label for="emotional-support">Provide emotional support</label>
+                            </div>
+                            <div class="preference-item checkbox-item">
+                                <input type="checkbox" id="challenge-thoughts" class="preference-checkbox">
+                                <label for="challenge-thoughts">Gently challenge negative thought patterns</label>
+                            </div>
+                        </div>
+                        <div class="preference-group">
+                            <h3>Topics of Interest</h3>
+                            <div class="topics-container">
+                                <div class="topic-tag">Psychology</div>
+                                <div class="topic-tag">Wellness</div>
+                                <div class="topic-tag">Personal Growth</div>
+                                <div class="topic-tag add-topic">+ Add Topic</div>
+                            </div>
+                        </div>
+                        <div class="preference-group">
+                            <h3>Account Settings</h3>
+                            <div class="account-buttons">
+                                <button id="change-password-button" class="account-button">Change Password</button>
+                                <button id="delete-account-button" class="account-button danger-button">Delete Account</button>
+                            </div>
+                        </div>
+                        <button id="save-preferences" class="save-button">Save Preferences</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Training Status Modal -->
+    <div id="training-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>SoulMate Evolution in Progress</h3>
+            <p>I'm learning from our interactions to serve you better. This may take a few moments.</p>
+            <div class="loading-spinner"></div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="password-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Change Your Password</h3>
+            <div class="modal-form">
+                <div class="form-group">
+                    <label for="current-password">Current Password</label>
+                    <input type="password" id="current-password" required>
+                </div>
+                <div class="form-group">
+                    <label for="new-password">New Password</label>
+                    <input type="password" id="new-password" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirm-new-password">Confirm New Password</label>
+                    <input type="password" id="confirm-new-password" required>
+                </div>
+                <div class="modal-buttons">
+                    <button id="cancel-password-change" class="cancel-button">Cancel</button>
+                    <button id="confirm-password-change" class="confirm-button">Change Password</button>
+                </div>
+                <div id="password-change-message" class="modal-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Account Modal -->
+    <div id="delete-account-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Delete Your Account</h3>
+            <p class="warning-text">This action cannot be undone. All your data will be permanently deleted.</p>
+            <div class="modal-form">
+                <div class="form-group">
+                    <label for="delete-password">Enter your password to confirm</label>
+                    <input type="password" id="delete-password" required>
+                </div>
+                <div class="modal-buttons">
+                    <button id="cancel-account-delete" class="cancel-button">Cancel</button>
+                    <button id="confirm-account-delete" class="danger-button">Delete My Account</button>
+                </div>
+                <div id="delete-account-message" class="modal-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wellness Activity Modal -->
+    <div id="wellness-modal" class="modal hidden">
+        <div class="modal-content wellness-modal-content">
+            <h3 id="wellness-modal-title"></h3>
+            <div id="wellness-modal-body"></div>
+            <button id="close-wellness-modal" class="close-button">Close</button>
+        </div>
+    </div>
+
+    <!-- Authentication Check -->
+    <script>
+        // Check if user is logged in
+        document.addEventListener('DOMContentLoaded', function() {
+            // Attempt to fetch user info to see if logged in
+            fetch('/api/user', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    // Not logged in, redirect to login page
+                    window.location.href = '/login';
+                    return null;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success) {
+                    // Update user name display
+                    const userName = document.getElementById('user-name');
+                    if (userName && data.user && data.user.username) {
+                        userName.textContent = data.user.username;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error checking authentication:', error);
+                // On error, redirect to login for safety
+                window.location.href = '/login';
+            });
+
+            // Set up logout button
+            const logoutButton = document.getElementById('logout-button');
+            if (logoutButton) {
+                logoutButton.addEventListener('click', function() {
+                    fetch('/api/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(() => {
+                        // Redirect to login page after logout
+                        window.location.href = '/login';
+                    })
+                    .catch(error => {
+                        console.error('Logout error:', error);
+                    });
+                });
+            }
+        });
+    </script>
+
+    <!-- Scripts -->
+    <script type="module" src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoulMate.AGI - Create Your AI Companion</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --primary-dark: #7c3aed;
+            --primary-light: #a78bfa;
+            --secondary: #06b6d4;
+            --secondary-dark: #0891b2;
+            --accent: #f43f5e;
+            --background: #0f172a;
+            --card-bg: #1e293b;
+            --surface-1: #334155;
+            --surface-2: #475569;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #94a3b8;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--background);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(139, 92, 246, 0.15) 0%, transparent 30%),
+                radial-gradient(circle at 80% 70%, rgba(6, 182, 212, 0.15) 0%, transparent 30%);
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.2;
+            z-index: -1;
+        }
+
+        .auth-container {
+            max-width: 500px;
+            width: 92%;
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            position: relative;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin: 20px 0;
+        }
+
+        .auth-container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+            z-index: 1;
+        }
+
+        .glassmorphism {
+            position: absolute;
+            background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border-radius: 50%;
+            filter: blur(4px);
+        }
+
+        .glass-1 {
+            width: 150px;
+            height: 150px;
+            top: -30px;
+            right: -30px;
+        }
+
+        .glass-2 {
+            width: 80px;
+            height: 80px;
+            bottom: 40px;
+            left: 20px;
+        }
+
+        .auth-header {
+            text-align: center;
+            padding: 32px 24px 24px;
+            position: relative;
+        }
+
+        .logo-animated {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, var(--primary-light), var(--primary-dark));
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: perspective(800px) rotateY(15deg);
+            box-shadow: 0 10px 15px -3px rgba(139, 92, 246, 0.3);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s ease;
+        }
+
+        .logo-animated:hover {
+            transform: perspective(800px) rotateY(-15deg);
+        }
+
+        .logo-animated::after {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                to bottom right,
+                rgba(255, 255, 255, 0) 40%,
+                rgba(255, 255, 255, 0.3) 50%,
+                rgba(255, 255, 255, 0) 60%
+            );
+            transform: rotate(45deg);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                transform: translateX(-100%) rotate(45deg);
+            }
+            100% {
+                transform: translateX(100%) rotate(45deg);
+            }
+        }
+
+        .logo-animated i {
+            font-size: 28px;
+            color: white;
+            z-index: 2;
+        }
+
+        .auth-header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary-light), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .auth-header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 280px;
+            margin: 0 auto;
+        }
+
+        .auth-form {
+            padding: 0 32px 32px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-with-icon {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+            font-size: 18px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 16px 16px 16px 48px;
+            background-color: var(--surface-1);
+            border: 1px solid var(--surface-2);
+            border-radius: 12px;
+            font-size: 16px;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .form-control::placeholder {
+            color: var(--text-tertiary);
+            opacity: 0.7;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+            background-color: rgba(139, 92, 246, 0.05);
+        }
+
+        .form-control:focus + .input-icon {
+            color: var(--primary);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .password-toggle:hover {
+            color: var(--primary);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Outfit', sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            box-shadow: 0 10px 15px -3px rgba(139, 92, 246, 0.2);
+        }
+
+        .btn-primary::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300px;
+            height: 300px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            transition: transform 0.5s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 20px -3px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-primary:hover::after {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .btn-primary:active {
+            transform: translateY(1px);
+        }
+
+        .btn-primary:disabled {
+            background: var(--surface-2);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .message {
+            padding: 14px 16px;
+            border-radius: 12px;
+            margin-top: 20px;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            display: none;
+            animation: slideUp 0.3s ease-out forwards;
+        }
+
+        .message i {
+            margin-right: 8px;
+            font-size: 16px;
+        }
+
+        .error-message {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .success-message {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 24px 0;
+            color: var(--text-tertiary);
+            font-size: 0.9rem;
+        }
+
+        .divider::before, .divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background-color: var(--surface-2);
+        }
+
+        .divider::before {
+            margin-right: 16px;
+        }
+
+        .divider::after {
+            margin-left: 16px;
+        }
+
+        .social-login {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .social-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background-color: var(--surface-1);
+            border: 1px solid var(--surface-2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .social-btn:hover {
+            transform: translateY(-3px);
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .auth-footer {
+            text-align: center;
+            padding: 20px 32px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--text-tertiary);
+        }
+
+        .auth-footer a {
+            color: var(--primary-light);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .auth-footer a:hover {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+
+        .features {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 24px;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .feature i {
+            color: var(--success);
+            margin-right: 6px;
+            font-size: 14px;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Responsive styles */
+        @media screen and (max-width: 768px) {
+            .auth-container {
+                width: 95%;
+                margin: 10px 0;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .auth-header {
+                padding: 24px 16px 16px;
+            }
+
+            .auth-header h1 {
+                font-size: 1.8rem;
+            }
+
+            .auth-form {
+                padding: 0 20px 24px;
+            }
+
+            .form-control {
+                padding: 14px 14px 14px 42px;
+            }
+
+            .features {
+                flex-direction: column;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .social-btn {
+                width: 42px;
+                height: 42px;
+            }
+
+            .btn {
+                padding: 14px;
+            }
+        }
+
+        /* Animation for form elements */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-group {
+            animation: fadeInUp 0.5s ease-out forwards;
+            opacity: 0;
+        }
+
+        .form-group:nth-child(1) { animation-delay: 0.1s; }
+        .form-group:nth-child(2) { animation-delay: 0.2s; }
+        .form-group:nth-child(3) { animation-delay: 0.3s; }
+        .form-group:nth-child(4) { animation-delay: 0.4s; }
+        .btn-primary { animation: fadeInUp 0.5s 0.5s ease-out forwards; opacity: 0; }
+
+        /* Pulse animation for the login button */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(139, 92, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="glassmorphism glass-1"></div>
+        <div class="glassmorphism glass-2"></div>
+        
+        <div class="auth-header">
+            <div class="logo-animated">
+                <i class="fas fa-robot"></i>
+            </div>
+            <h1>SoulMate.AGI</h1>
+            <p>Create your personal AI companion that understands you</p>
+        </div>
+        
+        <div class="auth-form">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <div class="input-with-icon">
+                    <input type="text" id="username" class="form-control" placeholder="Choose a unique username" required>
+                    <i class="fas fa-user input-icon"></i>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email (optional)</label>
+                <div class="input-with-icon">
+                    <input type="email" id="email" class="form-control" placeholder="your@email.com">
+                    <i class="fas fa-envelope input-icon"></i>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-with-icon">
+                    <input type="password" id="password" class="form-control" placeholder="At least 6 characters" required>
+                    <i class="fas fa-lock input-icon"></i>
+                    <i class="fas fa-eye password-toggle" id="password-toggle"></i>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="confirm-password">Confirm Password</label>
+                <div class="input-with-icon">
+                    <input type="password" id="confirm-password" class="form-control" placeholder="Verify your password" required>
+                    <i class="fas fa-lock input-icon"></i>
+                    <i class="fas fa-eye password-toggle" id="confirm-password-toggle"></i>
+                </div>
+            </div>
+            
+            <button type="button" id="register-btn" class="btn btn-primary">
+                <span>Create Your SoulMate</span>
+            </button>
+            
+            <div id="error-message" class="message error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>Error message</span>
+            </div>
+            
+            <div id="success-message" class="message success-message">
+                <i class="fas fa-check-circle"></i>
+                <span>Success message</span>
+            </div>
+            
+            <div class="features">
+                <div class="feature">
+                    <i class="fas fa-check-circle"></i>
+                    <span>AI Companionship</span>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Emotional Support</span>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-check-circle"></i>
+                    <span>24/7 Availability</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="auth-footer">
+            <p>Already have an account? <a href="/login">Login</a></p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const registerBtn = document.getElementById('register-btn');
+            const usernameInput = document.getElementById('username');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const confirmPasswordInput = document.getElementById('confirm-password');
+            const errorMessage = document.getElementById('error-message');
+            const successMessage = document.getElementById('success-message');
+            const passwordToggle = document.getElementById('password-toggle');
+            const confirmPasswordToggle = document.getElementById('confirm-password-toggle');
+            
+            // Password visibility toggle
+            passwordToggle.addEventListener('click', function() {
+                togglePasswordVisibility(passwordInput, passwordToggle);
+            });
+            
+            confirmPasswordToggle.addEventListener('click', function() {
+                togglePasswordVisibility(confirmPasswordInput, confirmPasswordToggle);
+            });
+            
+            function togglePasswordVisibility(input, icon) {
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            }
+            
+            registerBtn.addEventListener('click', function() {
+                // Get input values
+                const username = usernameInput.value.trim();
+                const email = emailInput.value.trim();
+                const password = passwordInput.value;
+                const confirmPassword = confirmPasswordInput.value;
+                
+                // Basic validation
+                if (!username) {
+                    showError('Please enter a username');
+                    return;
+                }
+                
+                if (!password) {
+                    showError('Please enter a password');
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    showError('Password must be at least 6 characters long');
+                    return;
+                }
+                
+                if (password !== confirmPassword) {
+                    showError('Passwords do not match');
+                    return;
+                }
+                
+                // Clear any previous messages
+                hideError();
+                hideSuccess();
+                
+                // Disable the button during registration
+                registerBtn.disabled = true;
+                registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+                
+                // Send registration request
+                fetch('/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        email: email || null,
+                        password: password
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success message
+                        showSuccess('Account created successfully! Redirecting to login...');
+                        
+                        // Redirect to login page after a short delay
+                        setTimeout(function() {
+                            window.location.href = '/login';
+                        }, 2000);
+                    } else {
+                        // Show error message
+                        showError(data.error || 'Registration failed. Please try again.');
+                        registerBtn.disabled = false;
+                        registerBtn.innerHTML = 'Create Your SoulMate';
+                    }
+                })
+                .catch(error => {
+                    console.error('Registration error:', error);
+                    showError('An error occurred during registration. Please try again.');
+                    registerBtn.disabled = false;
+                    registerBtn.innerHTML = 'Create Your SoulMate';
+                });
+            });
+            
+            function showError(message) {
+                const messageElement = document.querySelector('#error-message span');
+                messageElement.textContent = message;
+                errorMessage.style.display = 'flex';
+                successMessage.style.display = 'none';
+            }
+            
+            function hideError() {
+                errorMessage.style.display = 'none';
+            }
+            
+            function showSuccess(message) {
+                const messageElement = document.querySelector('#success-message span');
+                messageElement.textContent = message;
+                successMessage.style.display = 'flex';
+                errorMessage.style.display = 'none';
+            }
+            
+            function hideSuccess() {
+                successMessage.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
